@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: auth
+  
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://db:5432/telegrambot}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:password123}
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    database: POSTGRESQL 
+    database-platform: org.hibernate.dialect.PostgreSQLDialect  
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect 
+        jdbc:
+          lob:
+            non_contextual_creation: true
+  
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: admin
+    password: admin123
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: false
+
+rabbitmq:
+  queues:
+    # Bot → Auth
+    use-invite: auth.use-invite.request
+    generate-invite: auth.generate-invite.request
+    get-members: auth.get-members.request
+    kick-member: auth.kick-member.request
+    # Auth → Bot
+    use-invite-response: auth.use-invite.response
+    generate-invite-response: auth.generate-invite.response
+    get-members-response: auth.get-members.response
+    kick-member-response: auth.kick-member.response
+    member-joined-event: auth.member-joined.event

@@ -1,0 +1,4 @@
+{
+    "makefile.configureOnOpen": true,
+    "java.configuration.updateBuildConfiguration": "disabled"
+}

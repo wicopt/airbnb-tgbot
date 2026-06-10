@@ -1,0 +1,5 @@
+CREATE SCHEMA IF NOT EXISTS core;
+CREATE SCHEMA IF NOT EXISTS auth;
+
+-- DELETE FROM core.payment
+-- WHERE payment_date = '2026-05-30';

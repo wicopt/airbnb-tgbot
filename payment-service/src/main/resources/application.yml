@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: payment-service
+  
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://db:5432/telegrambot}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:password123}
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    database: POSTGRESQL 
+    database-platform: org.hibernate.dialect.PostgreSQLDialect  
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect 
+        jdbc:
+          lob:
+            non_contextual_creation: true
+  
+  
+  cache:
+    caffeine:
+      spec: maximumSize=50,expireAfterWrite=1h
+    type: caffeine
+    
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: admin
+    password: admin123
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: false
+rabbitmq:
+  queues:
+    statistics-request: statistics.request
+    statistics-response: statistics.response
+    roi-request: roi.request
+    roi-response: roi.response
+    payment-request: payment.request
+    payment-response: payment.response
+
+exchange:
+  base-currency: USD
+  api-url: https://api.frankfurter.app

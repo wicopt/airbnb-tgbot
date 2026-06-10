@@ -1,0 +1,4 @@
+aiogram
+aio-pika
+python-dotenv
+asyncpg
