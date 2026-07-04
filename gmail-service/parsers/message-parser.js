@@ -2,7 +2,7 @@
 const { google } = require("googleapis");
 const { getGoogleAuthClient } = require("../config/gmail-auth");
 
-async function getPayoutMessages(groupId, limit = 1) {
+async function getPayoutMessages(groupId, limit = 3) {
   console.log("getPayoutMessages: начало", { groupId, limit });
 
   try {
