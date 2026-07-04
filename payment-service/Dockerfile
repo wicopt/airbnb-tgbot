@@ -1,9 +1,9 @@
-FROM eclipse-temurin:21-jdk-alpine
+FROM maven:3.9-eclipse-temurin-21 
 
-RUN apk add --no-cache maven
+WORKDIR /app
 
-COPY . .
+COPY target/*.jar app.jar
 
-RUN mvn package -DskipTests
+EXPOSE 8080
 
-CMD java -jar target/*.jar
+ENTRYPOINT ["java", "-jar", "app.jar"]

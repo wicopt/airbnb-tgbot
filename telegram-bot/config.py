@@ -9,11 +9,15 @@ class Config:
     bot_token: str
     rabbitmq_url: str
     db_url: str
+    backend_url: str 
 
 def load_config() -> Config:
     return Config(
         bot_token=os.getenv("BOT_TOKEN"),
         rabbitmq_url=os.getenv("RABBITMQ_URL"),
         db_url=os.getenv("DATABASE_URL"),
+        backend_url=os.getenv("BACKEND_URL")
         
     )
+    
+settings = load_config()

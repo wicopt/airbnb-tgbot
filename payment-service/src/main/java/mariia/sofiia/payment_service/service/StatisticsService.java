@@ -60,7 +60,8 @@ public class StatisticsService {
                                         dto.setPaymentId(p.getPaymentId().toString());
                                         dto.setAmount(p.getAmount());
                                         dto.setPaymentDate(p.getPaymentDate());
-                                        dto.setCategory(p.getCategory());
+                                        dto.setCategoryId(p.getCategory().getCategoryId());
+                                        dto.setCategoryName(p.getCategory().getCategoryName());
                                         return dto;
                                 })
                                 .collect(Collectors.toList());

@@ -78,7 +78,6 @@ class PaymentService {
         }
     }
 
-    // 3. Создать платежи из нескольких payout'ов (например, за месяц)
     static async createPaymentsFromPayouts(payouts, groupId, dateFilter = null) {
         const allPayments = PaymentParser.parseAllPayments(payouts, dateFilter);
 
@@ -118,126 +117,6 @@ class PaymentService {
             errors: errors,
             message: `Saved ${savedPayments.length} of ${allPayments.length} payments`
         };
-    }
-
-    // 4. Получить платеж по ID
-    static async getPaymentById(paymentId) {
-        try {
-            const payment = await PaymentRepository.findById(paymentId);
-            if (!payment) {
-                return {
-                    success: false,
-                    message: "Payment not found"
-                };
-            }
-            return {
-                success: true,
-                data: payment
-            };
-        } catch (error) {
-            return {
-                success: false,
-                error: error.message,
-                message: "Failed to fetch payment"
-            };
-        }
-    }
-
-    // 5. Получить все платежи по комнате
-    static async getPaymentsByRoomId(roomId) {
-        try {
-            const payments = await PaymentRepository.findByRoomId(roomId);
-            return {
-                success: true,
-                data: payments,
-                count: payments.length,
-                message: "Payments fetched successfully"
-            };
-        } catch (error) {
-            return {
-                success: false,
-                error: error.message,
-                message: "Failed to fetch payments"
-            };
-        }
-    }
-
-    // 6. Получить все платежи по группе (пакету)
-    static async getPaymentsByGroupId(groupId) {
-        try {
-            const payments = await PaymentRepository.findByGroupId(groupId);
-            return {
-                success: true,
-                data: payments,
-                count: payments.length,
-                message: "Payments fetched successfully"
-            };
-        } catch (error) {
-            return {
-                success: false,
-                error: error.message,
-                message: "Failed to fetch payments"
-            };
-        }
-    }
-
-    // 7. Получить статистику по группе платежей
-    static async getGroupStats(groupId) {
-        try {
-            const payments = await PaymentRepository.findByGroupId(groupId);
-
-            const totalAmount = payments.reduce((sum, p) => sum + p.amount, 0);
-            const uniqueRooms = new Set(payments.map(p => p.roomId));
-
-            // Статистика по комнатам
-            const roomStats = {};
-            for (const payment of payments) {
-                if (!roomStats[payment.roomId]) {
-                    roomStats[payment.roomId] = {
-                        count: 0,
-                        total: 0
-                    };
-                }
-                roomStats[payment.roomId].count++;
-                roomStats[payment.roomId].total += payment.amount;
-            }
-
-            return {
-                success: true,
-                data: {
-                    groupId: groupId,
-                    totalPayments: payments.length,
-                    totalAmount: totalAmount,
-                    uniqueRooms: uniqueRooms.size,
-                    roomStats: roomStats
-                },
-                message: "Stats fetched successfully"
-            };
-        } catch (error) {
-            return {
-                success: false,
-                error: error.message,
-                message: "Failed to fetch stats"
-            };
-        }
-    }
-
-    // 8. Удалить все платежи по группе (например, при пересчете)
-    static async deletePaymentsByGroupId(groupId) {
-        try {
-            const deleted = await PaymentRepository.deleteByGroupId(groupId);
-            return {
-                success: true,
-                deletedCount: deleted,
-                message: `Deleted ${deleted} payments for group ${groupId}`
-            };
-        } catch (error) {
-            return {
-                success: false,
-                error: error.message,
-                message: "Failed to delete payments"
-            };
-        }
     }
 }
 

@@ -39,6 +39,17 @@ class Payment {
             category: this.#category
         };
     }
+
+    toJSON() {
+        return {
+            payment_id: this.#paymentId,
+            group_id: this.#groupId,
+            room_number: this.#roomNumber,
+            amount: this.#amount,
+            payment_date: this.#paymentDate.toISOString().split('T')[0],
+            category: this.#category
+        };
+    }
 }
 
 module.exports = Payment;

@@ -8,10 +8,10 @@ import lombok.Data;
 @Data
 public class PaymentCreateRequestDto {
     private String groupId;
-    private String roomNumber;
-    private String category;
+    private String roomNumber;      // null если категория is_shared
+    private Long categoryId;        
     private BigDecimal amount;
-    private String correlationId;    
+    private String correlationId;
     private LocalDate paymentDate;
     private String currency;
 }

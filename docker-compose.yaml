@@ -45,6 +45,7 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       RABBITMQ_URL: ${RABBITMQ_URL}
+      REDIRECT_URI: ${REDIRECT_URI}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -57,6 +58,8 @@ services:
   payment-service:
     build: ./payment-service 
     container_name: payment-service
+    ports:
+      - "8080:8080"
     environment:
       DATABASE_URL: ${DATABASE_URL}
       RABBITMQ_URL: ${RABBITMQ_URL}
@@ -69,7 +72,6 @@ services:
     networks:
       - internal
       - public
-
   auth-service:
     build: ./auth
     container_name: auth-service
@@ -90,6 +92,8 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       RABBITMQ_URL: ${RABBITMQ_URL}
+      BACKEND_URL: ${BACKEND_URL}
+      BOT_TOKEN: ${BOT_TOKEN}
     depends_on:
       rabbitmq:
         condition: service_healthy

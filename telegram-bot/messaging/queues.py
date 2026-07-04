@@ -20,9 +20,11 @@ class Queues:
     GET_STATISTICS_RESPONSE = "statistics.response"
     GET_ROI_RESPONSE = "roi.response"
     
-    
     # Bot → Payment
     CREATE_PAYMENT_REQUEST = "payment.request"
 
     # Payment → Bot
     CREATE_PAYMENT_RESPONSE = "payment.response"
+    
+    PAYMENT_PROCESSED_EVENT = "payment.processed"
+    

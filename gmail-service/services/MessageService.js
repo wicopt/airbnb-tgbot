@@ -8,7 +8,7 @@ class MessageService {
 
     async processMessages(groupId, dateFilter = null) {
         console.log("Начинаем processMessages для группы:", groupId);
-        
+
         try {
             console.log("Получаем выплаты из Gmail...");
             const payouts = await getPayoutMessages(groupId);
@@ -27,8 +27,8 @@ class MessageService {
             let totalSaved = 0;
             let totalPayments = 0;
             let allErrors = [];
+            let allSavedPayments = [];   
 
-            console.log("Начинаем обработку выплат...");
             for (const payout of filteredPayouts) {
                 console.log("Обрабатываем выплату от:", payout.messageDate);
                 const result = await PaymentService.createPaymentsFromPayout(payout, groupId);
@@ -40,6 +40,10 @@ class MessageService {
                     console.log("Сохранено платежей в этой выплате:", result.savedCount);
                 }
 
+                if (result.savedPayments?.length > 0) {
+                    allSavedPayments.push(...result.savedPayments);  
+                }
+
                 if (result.errors?.length > 0) {
                     allErrors.push(...result.errors);
                     console.log("Ошибок в этой выплате:", result.errors.length);
@@ -49,19 +53,18 @@ class MessageService {
             console.log("Всего сохранено платежей:", totalSaved);
             console.log("Всего обработано платежей:", totalPayments);
 
-            if (totalSaved > 0) {
+            if (totalSaved > 0 ) {
                 console.log("Публикуем событие в RabbitMQ...");
                 await publishEvent("payment.processed", {
                     groupId,
                     savedCount: totalSaved,
                     totalCount: totalPayments,
+                    savedPayments: allSavedPayments,  
                     errors: allErrors,
                     processedAt: new Date().toISOString()
                 });
-                console.log("Событие опубликовано");
             }
 
-            console.log("processMessages завершен успешно");
             return { success: true, savedCount: totalSaved };
 
         } catch (error) {

@@ -7,15 +7,16 @@ import lombok.Data;
 
 @Data
 public class PaymentResponseDto {
-    private boolean success;
-    private String correlationId;
     private String paymentId;
     private String groupId;
     private String roomNumber;
-    private String category;
-    private BigDecimal amount;          // итоговая сумма в USD
-    private BigDecimal originalAmount;  // оригинальная сумма
-    private String originalCurrency;    // оригинальная валюта
+    private BigDecimal amount;
+    private BigDecimal originalAmount;
+    private String originalCurrency;
     private LocalDate paymentDate;
+    private Long categoryId;
+    private String categoryName;
+    private String correlationId;
+    private boolean success;
     private String errorCode;
 }

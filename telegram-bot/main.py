@@ -2,7 +2,7 @@ import asyncio
 import logging
 from aiogram import Bot, Dispatcher
 
-from config import load_config
+from config import settings
 from messaging.producer import AuthProducer
 from messaging.consumer import AuthConsumer
 from db.database import Database
@@ -19,8 +19,6 @@ logger = logging.getLogger(__name__)
 
 
 async def main():
-    config = load_config()
-
     # DB
     db = Database()
     await db.connect()
@@ -29,17 +27,16 @@ async def main():
     auth_repo = AuthRepository(db)
 
     # bot
-    bot = Bot(token=config.bot_token)
+    bot = Bot(token=settings.bot_token)
     dp = Dispatcher()
 
-    # middleware (auth gate)
+    # middleware
     dp.message.middleware(AuthMiddleware(auth_repo))
 
-    # DI container
+    # DI
     dp["db"] = db
 
     # routers
-    
     dp.include_router(start.router)
     dp.include_router(statistics.router)
     dp.include_router(invite.router)
@@ -47,16 +44,14 @@ async def main():
     dp.include_router(payment.router)
 
     # messaging
-    producer = AuthProducer(config.rabbitmq_url)
-    consumer = AuthConsumer(config.rabbitmq_url, bot)
-
+    producer = AuthProducer(settings.rabbitmq_url)
     await producer.connect()
+
+    consumer = AuthConsumer(settings.rabbitmq_url, bot, producer) 
     await consumer.connect()
+    
+    task = asyncio.create_task(consumer.start_consuming())
 
-    # ВАЖНО: НЕ блокируем event loop
-    asyncio.create_task(consumer.start_consuming())
-
-    # DI
     dp["producer"] = producer
 
     logger.info("Bot started")
@@ -64,6 +59,7 @@ async def main():
     try:
         await dp.start_polling(bot)
     finally:
+        task.cancel()
         await producer.close()
         await consumer.close()
         await bot.session.close()

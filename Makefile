@@ -15,3 +15,7 @@ re:
 	docker compose -f docker-compose.yaml restart gmail-service
 db:
 	docker exec -it airbnb-tgbot-db-1  psql -U postgres -d telegrambot
+rm:
+	docker compose rm -f gmail-service
+st:
+	docker compose up --build gmail-service -d

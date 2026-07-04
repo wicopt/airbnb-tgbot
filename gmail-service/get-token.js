@@ -3,7 +3,7 @@ require('dotenv').config();
 const { google } = require('googleapis');
 const http = require('http');
 const url = require('url');
-const { pool } = require('./config/dbConfig');
+// const { pool } = require('./config/dbConfig');
 
 // Ваши данные из Google Cloud Console
 const CLIENT_ID = process.env.CLIENT_ID;
@@ -79,17 +79,18 @@ async function getAccessToken() {
         console.log('===========================================');
         
         if (tokens.refresh_token) {
+          console.log('REFRESH_TOKEN:', tokens.refresh_token);
           // Сохраняем токен в базу данных
-          await saveTokensToDatabase(
-            GROUP_ID,
-            tokens.refresh_token,
-            CLIENT_ID,
-            CLIENT_SECRET
-          );
+          // await saveTokensToDatabase(
+          //   GROUP_ID,
+          //   tokens.refresh_token,
+          //   CLIENT_ID,
+          //   CLIENT_SECRET
+          // );
           
-          console.log('===========================================');
-          console.log('REFRESH_TOKEN сохранен в БД для группы:', GROUP_ID);
-          console.log('===========================================');
+          // console.log('===========================================');
+          // console.log('REFRESH_TOKEN сохранен в БД для группы:', GROUP_ID);
+          // console.log('===========================================');
         } else {
           console.log('ВНИМАНИЕ: Refresh token не получен. Убедитесь, что параметр prompt=consent установлен');
         }
@@ -140,9 +141,9 @@ async function getAccessToken() {
 
 // Проверяем подключение к БД перед запуском
 async function init() {
-  try {
-    await pool.query('SELECT NOW()');
-    console.log('Database connection successful');
+   try {
+  //   await pool.query('SELECT NOW()');
+  //   console.log('Database connection successful');
     await getAccessToken();
   } catch (error) {
     console.error('Database connection failed:', error.message);

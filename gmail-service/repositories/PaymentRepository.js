@@ -1,4 +1,3 @@
-// repositories/paymentRepository.js
 const { pool } = require("../config/dbConfig");
 const Payment = require("../domain/Payment");
 
@@ -8,126 +7,127 @@ class PaymentRepository {
         return new Payment({
             payment_id: row.payment_id,
             group_id: row.group_id,
-            room_number: row.room_number,  //
+            room_number: row.room_number,
             amount: row.amount,
             payment_date: row.payment_date,
-            category: row.category,
+            category: row.category, // всё как было
         });
+    }
+
+    // Базовый SELECT — JOIN скрыт здесь, остальной код не знает о двух таблицах
+    static get _baseSelect() {
+        return `
+            SELECT 
+                p.payment_id,
+                p.group_id,
+                p.room_number,
+                p.amount,
+                p.payment_date,
+                c.category_name AS category  -- выглядит как раньше
+            FROM core.payment p
+            JOIN core.category c ON c.category_id = p.category_id
+        `;
     }
 
     static async getLastPaymentDate(groupId) {
         const result = await pool.query(
-            `SELECT MAX(payment_date) as last_date FROM core.payment WHERE group_id = $1 AND category = 'Airbnb Payout'`,
+            `SELECT MAX(p.payment_date) as last_date 
+             FROM core.payment p
+             JOIN core.category c ON c.category_id = p.category_id
+             WHERE p.group_id = $1 AND c.category_name = 'Airbnb Payout'`,
             [groupId]
         );
-        return result.rows[0]?.last_date ?? null; // null если таблица пустая
+        return result.rows[0]?.last_date ?? null;
     }
-    // Получить платеж по ID
+
     static async findById(paymentId) {
         const result = await pool.query(
-            `SELECT payment_id, group_id, room_number, amount, payment_date, category
-             FROM core.payment
-             WHERE payment_id = $1`,
+            `${this._baseSelect} WHERE p.payment_id = $1`,
             [paymentId]
         );
-
-        if (result.rows.length === 0) {
-            return null;
-        }
-
         return this._toDomain(result.rows[0]);
     }
 
-    // Получить все платежи по комнате
-    static async findByRoomNumber(roomNumber) {  // ← переименовано
+    static async findByRoomNumber(roomNumber) {
         const result = await pool.query(
-            `SELECT payment_id, group_id, room_number, amount, payment_date, category
-             FROM core.payment
-             WHERE room_number = $1
-             ORDER BY payment_date DESC`,
+            `${this._baseSelect} WHERE p.room_number = $1 ORDER BY p.payment_date DESC`,
             [roomNumber]
         );
-
         return result.rows.map(row => this._toDomain(row));
     }
 
-    // Получить все платежи по группе
     static async findByGroupId(groupId) {
         const result = await pool.query(
-            `SELECT payment_id, group_id, room_number, amount, payment_date, category
-             FROM core.payment
-             WHERE group_id = $1
-             ORDER BY payment_date DESC`,
+            `${this._baseSelect} WHERE p.group_id = $1 ORDER BY p.payment_date DESC`,
             [groupId]
         );
-
         return result.rows.map(row => this._toDomain(row));
     }
 
-    // Получить платежи по комнате за период
     static async findByRoomNumberAndDateRange(roomNumber, startDate, endDate) {
         const result = await pool.query(
-            `SELECT payment_id, group_id, room_number, amount, payment_date, category
-             FROM core.payment
-             WHERE room_number = $1 
-               AND payment_date BETWEEN $2 AND $3
-             ORDER BY payment_date DESC`,
+            `${this._baseSelect}
+             WHERE p.room_number = $1 AND p.payment_date BETWEEN $2 AND $3
+             ORDER BY p.payment_date DESC`,
             [roomNumber, startDate, endDate]
         );
-
         return result.rows.map(row => this._toDomain(row));
     }
 
-    // Получить все платежи (с опциональной фильтрацией по категории)
     static async findAll(category = null) {
-        let query = `
-            SELECT payment_id, group_id, room_number, amount, payment_date, category
-            FROM core.payment
-        `;
+        let query = this._baseSelect;
         const params = [];
 
         if (category) {
-            query += ` WHERE category = $1`;
+            query += ` WHERE c.category_name = $1`; // фильтр по имени как раньше
             params.push(category);
         }
 
-        query += ` ORDER BY payment_date DESC`;
+        query += ` ORDER BY p.payment_date DESC`;
 
         const result = await pool.query(query, params);
         return result.rows.map(row => this._toDomain(row));
     }
 
-    // Создать новый платеж
     static async create(paymentData) {
         const { group_id, room_number, amount, payment_date, category } = paymentData;
 
-        // Проверяем, существует ли уже такой платеж
-        const existingPayment = await pool.query(
-            `SELECT payment_id, group_id, room_number, amount, payment_date, category
-            FROM core.payment
-            WHERE group_id = $1 
-                AND room_number = $2 
-                AND amount = $3 
-                AND payment_date = $4`,
-            [group_id, room_number, amount, payment_date]
+        // Находим category_id по имени — единственное место где нужна конвертация
+        const categoryResult = await pool.query(
+            `SELECT category_id FROM core.category WHERE category_name = $1`,
+            [category]
         );
 
-        if (existingPayment.rows.length > 0) {
-            console.log(`Платеж уже существует: ...`);
-            return { ...this._toDomain(existingPayment.rows[0]), alreadyExists: true };
+        if (categoryResult.rows.length === 0) {
+            throw new Error(`Category not found: ${category}`);
         }
 
-        // Если не существует - создаем новый
-        const result = await pool.query(
-            `INSERT INTO core.payment (payment_id, group_id, room_number, amount, payment_date, category)
-         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)
-         RETURNING payment_id, group_id, room_number, amount, payment_date, category`,
-            [group_id, room_number, amount, payment_date, category]
+        const category_id = categoryResult.rows[0].category_id;
+
+        const existing = await pool.query(
+            `SELECT payment_id FROM core.payment
+             WHERE group_id = $1 AND room_number = $2 
+               AND amount = $3 AND payment_date = $4 AND category_id = $5`,
+            [group_id, room_number, amount, payment_date, category_id]
         );
 
-        return { ...this._toDomain(result.rows[0]), alreadyExists: false };
+        if (existing.rows.length > 0) {
+            console.log(`Платеж уже существует`);
+            const payment = await this.findById(existing.rows[0].payment_id);
+            return { ...payment.toJSON(), alreadyExists: true };
+        }
+
+        const result = await pool.query(
+            `INSERT INTO core.payment (payment_id, group_id, room_number, amount, payment_date, category_id)
+             VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)
+             RETURNING payment_id`,
+            [group_id, room_number, amount, payment_date, category_id]
+        );
+
+        const payment = await this.findById(result.rows[0].payment_id);  
+        return { ...payment.toJSON(), alreadyExists: false };
     }
-    // Обновить платеж
+
     static async update(paymentId, updateData) {
         const { amount, payment_date, category } = updateData;
 
@@ -144,8 +144,16 @@ class PaymentRepository {
             values.push(payment_date);
         }
         if (category !== undefined) {
-            updates.push(`category = $${paramCount++}`);
-            values.push(category);
+            // Конвертируем имя в id только здесь
+            const categoryResult = await pool.query(
+                `SELECT category_id FROM core.category WHERE category_name = $1`,
+                [category]
+            );
+            if (categoryResult.rows.length === 0) {
+                throw new Error(`Category not found: ${category}`);
+            }
+            updates.push(`category_id = $${paramCount++}`);
+            values.push(categoryResult.rows[0].category_id);
         }
 
         if (updates.length === 0) {
@@ -154,95 +162,66 @@ class PaymentRepository {
 
         values.push(paymentId);
 
-        const result = await pool.query(
-            `UPDATE core.payment 
-             SET ${updates.join(', ')}
-             WHERE payment_id = $${paramCount}
-             RETURNING payment_id, group_id, room_number, amount, payment_date, category`,
+        await pool.query(
+            `UPDATE core.payment SET ${updates.join(', ')} WHERE payment_id = $${paramCount}`,
             values
         );
 
-        if (result.rows.length === 0) {
-            return null;
-        }
-
-        return this._toDomain(result.rows[0]);
+        return this.findById(paymentId);
     }
 
-    // Обновить сумму платежа
     static async updateAmount(paymentId, amount) {
-        const result = await pool.query(
-            `UPDATE core.payment 
-             SET amount = $1
-             WHERE payment_id = $2
-             RETURNING payment_id, group_id, room_number, amount, payment_date, category`,
+        await pool.query(
+            `UPDATE core.payment SET amount = $1 WHERE payment_id = $2`,
             [amount, paymentId]
         );
-
-        if (result.rows.length === 0) {
-            return null;
-        }
-
-        return this._toDomain(result.rows[0]);
+        return this.findById(paymentId);
     }
 
-    // Удалить платеж
     static async delete(paymentId) {
         const result = await pool.query(
-            `DELETE FROM core.payment
-             WHERE payment_id = $1
-             RETURNING payment_id`,
+            `DELETE FROM core.payment WHERE payment_id = $1 RETURNING payment_id`,
             [paymentId]
         );
-
         return result.rows.length > 0;
     }
 
-    // Удалить все платежи по комнате
     static async deleteByRoomNumber(roomNumber) {
         const result = await pool.query(
-            `DELETE FROM core.payment
-             WHERE room_number = $1
-             RETURNING payment_id`,
+            `DELETE FROM core.payment WHERE room_number = $1 RETURNING payment_id`,
             [roomNumber]
         );
-
         return result.rows.length;
     }
 
-    // Получить сумму всех платежей по комнате
     static async getTotalAmountByRoomNumber(roomNumber) {
         const result = await pool.query(
             `SELECT COALESCE(SUM(amount), 0) as total_amount
-             FROM core.payment
-             WHERE room_number = $1`,
+             FROM core.payment WHERE room_number = $1`,
             [roomNumber]
         );
-
         return parseFloat(result.rows[0].total_amount);
     }
 
-    // Получить сумму платежей по категории для комнаты
     static async getTotalByCategory(roomNumber, category) {
         const result = await pool.query(
-            `SELECT COALESCE(SUM(amount), 0) as total_amount
-             FROM core.payment
-             WHERE room_number = $1 AND category = $2`,
+            `SELECT COALESCE(SUM(p.amount), 0) as total_amount
+             FROM core.payment p
+             JOIN core.category c ON c.category_id = p.category_id
+             WHERE p.room_number = $1 AND c.category_name = $2`,
             [roomNumber, category]
         );
-
         return parseFloat(result.rows[0].total_amount);
     }
 
-    // Получить уникальные категории платежей
     static async getUniqueCategories() {
         const result = await pool.query(
-            `SELECT DISTINCT category
-             FROM core.payment
+            `SELECT DISTINCT c.category_name AS category
+             FROM core.payment p
+             JOIN core.category c ON c.category_id = p.category_id
              ORDER BY category`
         );
-
-        return result.rows.map(row => row.category);
+        return result.rows.map(row => row.category); // возвращает строки как раньше
     }
 }
 
