@@ -1,24 +1,24 @@
 # docker-compose.yml
 services:
-  # rabbitmq:
-  #     image: rabbitmq:3-management-alpine
-  #     container_name: rabbitmq
-  #     ports:
-  #       - "5672:5672"   # AMQP протокол
-  #       - "15672:15672" # Веб-интерфейс управления
-  #     environment:
-  #       - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
-  #       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
-  #     volumes:
-  #       - rabbitmq_data:/var/lib/rabbitmq
-  #     healthcheck:
-  #       test: ["CMD", "rabbitmq-diagnostics", "ping"]
-  #       interval: 10s
-  #       timeout: 5s
-  #       retries: 5
-  #     networks:
-  #     - internal 
-  #     - public 
+  rabbitmq:
+      image: rabbitmq:3-management-alpine
+      container_name: rabbitmq
+      ports:
+        - "5672:5672"   # AMQP протокол
+        - "15672:15672" # Веб-интерфейс управления
+      environment:
+        - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+        - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+      volumes:
+        - rabbitmq_data:/var/lib/rabbitmq
+      healthcheck:
+        test: ["CMD", "rabbitmq-diagnostics", "ping"]
+        interval: 10s
+        timeout: 5s
+        retries: 5
+      networks:
+      - internal 
+      - public 
   
   db:
     image: postgres:16-alpine
@@ -105,20 +105,20 @@ services:
   #   networks:
   #     - internal
   #     - public
-  # auth-service:
-  #   build: ./auth
-  #   container_name: auth-service
-  #   environment:
-  #     DATABASE_URL: ${DATABASE_URL}
-  #     RABBITMQ_URL: ${RABBITMQ_URL}
-  #   depends_on:
-  #     rabbitmq:
-  #       condition: service_healthy
-  #     db:
-  #       condition: service_healthy
-  #   restart: unless-stopped
-  #   networks:
-  #     - internal
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - internal
   # tg-service:
   #   build: ./telegram-bot
   #   container_name: tg-service
