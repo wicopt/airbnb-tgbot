@@ -65,4 +65,19 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
         @Param("from") LocalDate from,
         @Param("to") LocalDate to
     );
+    @Query("""
+        SELECT p.roomNumber AS roomNumber, SUM(p.amount) AS totalIncome
+        FROM Payment p
+        WHERE p.groupId = :groupId
+          AND p.amount > 0
+          AND p.paymentDate > :from
+          AND p.paymentDate <= :to
+        GROUP BY p.roomNumber
+        """)
+    List<RoomIncomeProjection> get(
+        @Param("groupId") String groupId,
+        @Param("from") LocalDate from,
+        @Param("to") LocalDate to
+    );
+
 }

@@ -13,8 +13,6 @@ class PaymentRepository {
             category: row.category, // всё как было
         });
     }
-
-    // Базовый SELECT — JOIN скрыт здесь, остальной код не знает о двух таблицах
     static get _baseSelect() {
         return `
             SELECT 
@@ -124,7 +122,7 @@ class PaymentRepository {
             [group_id, room_number, amount, payment_date, category_id]
         );
 
-        const payment = await this.findById(result.rows[0].payment_id);  
+        const payment = await this.findById(result.rows[0].payment_id);
         return { ...payment.toJSON(), alreadyExists: false };
     }
 
