@@ -1,2 +1,27 @@
-node_modules
-backup/rclone.conf
+.env
+.env.*
+!.env.example
+
+# rclone
+rclone.conf
+**/rclone.conf
+
+# Node.js
+node_modules/
+
+# Python
+venv/
+.venv/
+env/
+ENV/
+
+# Java 
+target/
+*.class
+
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# VS Code
+.history/
+.vscode/

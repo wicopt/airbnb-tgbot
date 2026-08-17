@@ -1,5 +1,0 @@
-{
-    "makefile.configureOnOpen": true,
-    "java.configuration.updateBuildConfiguration": "disabled",
-    "java.compile.nullAnalysis.mode": "disabled"
-}
