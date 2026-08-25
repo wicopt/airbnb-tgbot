@@ -3,9 +3,6 @@ services:
   rabbitmq:
       image: rabbitmq:3-management-alpine
       container_name: rabbitmq
-      ports:
-        - "5672:5672"   # AMQP протокол
-        - "15672:15672" # Веб-интерфейс управления
       environment:
         - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
         - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
@@ -30,11 +27,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./db-init:/docker-entrypoint-initdb.d  # Путь исправлен
+      - ./db-init:/docker-entrypoint-initdb.d  
     networks:
       - internal  
 
@@ -118,6 +113,23 @@ services:
     restart: unless-stopped
     networks:
       - internal
+  tg-service:
+    build: ./telegram-bot
+    container_name: tg-service
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      BACKEND_URL: ${BACKEND_URL}
+      BOT_TOKEN: ${BOT_TOKEN}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - internal
+      - public
   tg-service:
     build: ./telegram-bot
     container_name: tg-service
