@@ -3,6 +3,9 @@ services:
   rabbitmq:
       image: rabbitmq:3-management-alpine
       container_name: rabbitmq
+      ports:
+        - "5672:5672"   # AMQP протокол
+        - "15672:15672" # Веб-интерфейс управления
       environment:
         - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
         - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
@@ -27,14 +30,16 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./db-init:/docker-entrypoint-initdb.d  
+      - ./db-init:/docker-entrypoint-initdb.d  # Путь исправлен
     networks:
       - internal  
 
   pg-backup:
-    build: ./backup
+    image: ghcr.io/wicopt/airbnb-tgbot/pg-backup:latest
     container_name: pg-backup
     environment:
       PGHOST: db
@@ -67,7 +72,7 @@ services:
     networks: 
       - internal 
   gmail-service:
-    build: ./gmail-service 
+    image: ghcr.io//wicopt/airbnb-tgbot/gmail-service:latest
     container_name: gmail-service
     environment:
       DATABASE_URL: ${DATABASE_URL}
@@ -83,7 +88,7 @@ services:
       - internal
       - public
   payment-service:
-    build: ./payment-service 
+    image: ghcr.io/wicopt/airbnb-tgbot/payment-service:latest
     container_name: payment-service
     ports:
       - "8080:8080"
@@ -100,7 +105,7 @@ services:
       - internal
       - public
   auth-service:
-    build: ./auth-service
+    image: ghcr.io/wicopt/airbnb-tgbot/auth-service:latest
     container_name: auth-service
     environment:
       DATABASE_URL: ${DATABASE_URL}
@@ -114,24 +119,7 @@ services:
     networks:
       - internal
   tg-service:
-    build: ./telegram-bot
-    container_name: tg-service
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      RABBITMQ_URL: ${RABBITMQ_URL}
-      BACKEND_URL: ${BACKEND_URL}
-      BOT_TOKEN: ${BOT_TOKEN}
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      db:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - internal
-      - public
-  tg-service:
-    build: ./telegram-bot
+    image: ghcr.io/wicopt/airbnb-tgbot/tg-service:latest
     container_name: tg-service
     environment:
       DATABASE_URL: ${DATABASE_URL}
