@@ -1,11 +1,9 @@
-FROM postgres:16
+FROM postgres:16-alpine
 
-RUN apt-get update && apt-get install -y curl unzip && \
-    curl https://rclone.org/install.sh | bash && \
-    apt-get clean
+RUN apk add --no-cache curl unzip bash && \
+    curl https://rclone.org/install.sh | bash
 
 COPY backup.sh /backup.sh
 RUN chmod +x /backup.sh
 
-# держим контейнер живым, чтобы ofelia могла делать exec
 CMD ["sleep", "infinity"]
